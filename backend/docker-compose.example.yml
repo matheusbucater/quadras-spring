@@ -1,0 +1,76 @@
+services:
+  mariadb:
+    image: mariadb:latest
+    container_name: mariadb_container
+    environment:
+      MYSQL_ROOT_PASSWORD: 
+      MYSQL_DATABASE: 
+      MYSQL_USER: 
+      MYSQL_PASSWORD: 
+    ports:
+      - "3307:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - springboot-network
+
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: 
+      RABBITMQ_DEFAULT_PASS:
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - springboot-network
+
+  minio:
+    image: minio/minio
+    container_name: minio
+    command: server --console-address ":9001" /var/lib/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: 
+      MINIO_ROOT_PASSWORD: 
+    volumes:
+      - minio_data:/var/lib/minio
+    networks:
+      - springboot-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: springboot_container
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/qsmc_db
+      SPRING_DATASOURCE_USERNAME: 
+      SPRING_DATASOURCE_PASSWORD: 
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: 
+      SPRING_RABBITMQ_PASSWORD: 
+    depends_on:
+      - mariadb
+      - rabbitmq
+    networks:
+      - springboot-network
+
+volumes:
+  mariadb_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+  minio_data:
+    driver: local
+
+networks:
+  springboot-network:
+    driver: bridge
